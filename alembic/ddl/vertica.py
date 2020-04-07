@@ -3,6 +3,8 @@ import logging
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.schema import CreateColumn
 
+from .base import ColumnDefault, DropColumn
+from .base import format_server_default, add_column, alter_table, drop_column
 from .impl import DefaultImpl
 
 log = logging.getLogger(__name__)
@@ -30,22 +32,22 @@ class VerticaImpl(DefaultImpl):
         if self.as_sql and self.batch_separator:
             self.static_output(self.batch_separator)
         return result
-    
+
     def alter_column(
-        self,
-        table_name,
-        column_name,
-        nullable=None,
-        server_default=False,
-        name=None,
-        type_=None,
-        schema=None,
-        autoincrement=None,
-        existing_type=None,
-        existing_server_default=None,
-        existing_nullable=None,
-        existing_autoincrement=None,
-        **kw
+            self,
+            table_name,
+            column_name,
+            nullable=None,
+            server_default=False,
+            name=None,
+            type_=None,
+            schema=None,
+            autoincrement=None,
+            existing_type=None,
+            existing_server_default=None,
+            existing_nullable=None,
+            existing_autoincrement=None,
+            **kw
     ):
         using = kw.pop("postgresql_using", None)
 
@@ -81,12 +83,37 @@ class VerticaImpl(DefaultImpl):
             existing_autoincrement=existing_autoincrement,
             **kw
         )
-    
+
     def create_index(self, index):
-        pass
-    
+        if index.unique is not None:
+            existTable = self.dialect.identifier_preparer.format_table(index.table)
+            for column in index.columns:
+                if index.unique:
+                    self._exec(f"ALTER TABLE {existTable} "
+                               f"ADD UNIQUE ({column.name})")
+
     def drop_index(self, index):
         pass
+
+
+@compiles(DropColumn)
+def visit_drop_column(element, compiler, **kw):
+    return "%s %s %s" % (
+        alter_table(compiler, element.table_name, element.schema),
+        drop_column(compiler, element.column.name, **kw),
+        "CASCADE"
+    )
+
+
+@compiles(ColumnDefault, "vertica")
+def visit_column_default(element, compiler, **kw):
+    return "%s %s %s" % (
+        alter_table(compiler, element.table_name, element.schema),
+        add_column(compiler, element.column),
+        "DEFAULT %s" % format_server_default(compiler, element.default)
+        if element.default is not None
+        else "DEFAULT NULL",
+    )
 
 
 @compiles(CreateColumn, 'vertica')
