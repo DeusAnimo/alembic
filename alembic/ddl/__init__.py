@@ -3,4 +3,5 @@ from . import mysql  # noqa
 from . import oracle  # noqa
 from . import postgresql  # noqa
 from . import sqlite  # noqa
+from . import vertica   # noqa
 from .impl import DefaultImpl  # noqa
