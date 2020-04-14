@@ -65,16 +65,16 @@ class VerticaImpl(DefaultImpl, VerticaDialect):
     ):
         using = kw.pop("postgresql_using", None)
         current_column_info = self._get_columns_info(column_name, table_name)
+        is_nullable_column = current_column_info["nullable"]
         col_expr = None
 
         if nullable is not None:
             existing_nullable = None
-            is_nullable = current_column_info["nullable"]  # явл не пустым TRUE
-            if current_column_info["nullable"] == nullable:
+            if is_nullable_column == nullable:
                 col_expr = "DROP" if nullable else "SET"
 
         if existing_nullable is not None:
-            if not current_column_info["nullable"] == existing_nullable:
+            if not is_nullable_column == existing_nullable:
                 col_expr = "DROP" if existing_nullable else "SET"
 
         if type_ is not None:
