@@ -23,6 +23,7 @@ requires = [
     "Mako",
     "python-editor>=0.3",
     "python-dateutil",
+    "sqlalchemy-vertica-python==0.4.4"
 ]
 
 
