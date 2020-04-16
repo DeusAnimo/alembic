@@ -106,13 +106,9 @@ class VerticaImpl(DefaultImpl, VerticaDialect):
             **kw
         )
 
+    # Disable index creation since that's not a thing in Vertica
     def create_index(self, index):
-        if index.unique is not None:
-            existTable = self.dialect.identifier_preparer.format_table(index.table)
-            for column in index.columns:
-                if index.unique:
-                    self._exec(f"ALTER TABLE {existTable} "
-                               f"ADD UNIQUE ({column.name})")
+        pass
 
     def drop_index(self, index):
         pass
